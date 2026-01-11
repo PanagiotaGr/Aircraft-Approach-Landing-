@@ -42,20 +42,25 @@ def main():
 
     log = {k: [] for k in ["x", "y", "h", "V", "psi", "gamma", "phi", "throttle", "n", "href"]}
 
-    # For numerical derivatives
     y_prev = model.y
     h_prev = model.h
 
     stable = True
     t = 0.0
 
+    # Touchdown settings
+    x_thresh = float(approach["x_threshold"])
+    h_thresh = approach.get("h_threshold", approach.get("h_thresh", None))
+    x_window = float(approach.get("x_window", 2000.0))
+    h_ground = float(approach.get("h_ground", 1.0))
+
+    crossed_threshold_printed = False
+
     while t < T:
-        # Numerical rates
         y_dot = (model.y - y_prev) / dt
         h_dot = (model.h - h_prev) / dt
         y_prev, h_prev = model.y, model.h
 
-        # Guidance / control
         phi_cmd, gamma_cmd, throttle_cmd, href = guidance.compute(
             state={
                 "x": model.x,
@@ -71,7 +76,6 @@ def main():
             rates={"y_dot": y_dot, "h_dot": h_dot},
         )
 
-        # Dynamics step
         out = model.step(dt, phi_cmd, gamma_cmd, throttle_cmd, wind.sample(t))
 
         # Logging
@@ -86,22 +90,31 @@ def main():
         log["n"].append(out["n"])
         log["href"].append(href)
 
+        # Threshold crossing (once)
+        if (not crossed_threshold_printed) and (model.x >= x_thresh):
+            print(f"Crossed threshold: t={t:.1f}s, x={model.x - x_thresh:.1f} m, h={model.h:.1f} m, y={model.y:.1f} m")
+            crossed_threshold_printed = True
+
         # Stabilized approach gate
         y_err = model.y
         V_err = refs["V_ref"] - model.V
         stable = stable and stabilized_gate(y_err, V_err, model.gamma, model.h)
 
-        # Stop if touchdown near threshold
+        # Touchdown
         if touchdown(
             model.x,
             model.h,
-            x_thresh=approach["x_threshold"],
-            h_thresh=approach["h_threshold"],
+            x_thresh=x_thresh,
+            h_thresh=h_thresh,
+            x_window=x_window,
+            h_ground=h_ground,
+            debug=True,
         ):
             break
 
-        # IMPORTANT: stop if we passed the runway threshold without touchdown
-        if model.x > approach["x_threshold"] + 50.0:
+        # Missed approach if we exit runway window without touchdown
+        if model.x > x_thresh + x_window:
+            print("Missed approach: passed runway window without touchdown.")
             break
 
         t += dt

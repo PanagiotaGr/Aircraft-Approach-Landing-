@@ -1,0 +1,16 @@
+sim:
+  dt: 0.01
+  t_final: 60.0
+  real_time: true
+  log_hz: 50
+
+aircraft:
+  mass: 1200.0
+  S: 16.2
+  rho: 1.225
+  CL0: 0.2
+  CLa: 5.5
+  CD0: 0.03
+  k: 0.05
+  Tmax: 2500.0
+  Iy: 2500.0

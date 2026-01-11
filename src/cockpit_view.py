@@ -269,7 +269,7 @@ def main():
 
         model.step(dt, phi_cmd, gamma_cmd, throttle_cmd, wind.sample(t))
 
-        if touchdown(model.x, model.h, x_thresh=approach["x_threshold"], h_thresh=approach["h_threshold"]):
+        if touchdown(model.x, model.h, approach["x_threshold"], approach["h_threshold"]):
             done["flag"] = True
         if model.x > approach["x_threshold"] + 80.0:
             done["flag"] = True
