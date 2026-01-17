@@ -189,6 +189,3 @@ This project is well suited for:
 
 ---
 
-
-* align this README stylistically with your **robotics & RL projects**
-* prepare a **“Projects Portfolio” README** that unifies όλα αυτά σε research profile
